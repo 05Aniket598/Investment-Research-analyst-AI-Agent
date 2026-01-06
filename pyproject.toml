@@ -1,0 +1,31 @@
+[project]
+name = "investment_research_analyst"
+version = "0.1.0"
+description = "investment_research_analyst using crewAI"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "crewai[google-genai,tools]==1.7.2",
+    "google>=3.0.0",
+    "google-api-core>=2.28.1",
+    "litellm>=1.75.3",
+]
+
+[project.scripts]
+investment_research_analyst = "investment_research_analyst.main:run"
+run_crew = "investment_research_analyst.main:run"
+train = "investment_research_analyst.main:train"
+replay = "investment_research_analyst.main:replay"
+test = "investment_research_analyst.main:test"
+run_with_trigger = "investment_research_analyst.main:run_with_trigger"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.crewai]
+type = "crew"
+
+dependencies = [
+  "google-api-core>=2.17.0"
+]

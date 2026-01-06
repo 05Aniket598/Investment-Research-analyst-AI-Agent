@@ -1,0 +1,118 @@
+data_collection_task:
+  description: >
+    Collect complete, accurate, and structured financial data for {stock} and its peers {peer_companies}
+    covering the most recent 3-5 financial years.
+
+    Data to be collected must include:
+    - Income Statement, Balance Sheet, and Cash Flow Statement
+    - Key financial ratios across profitability, liquidity, leverage, and efficiency
+    - Market data including historical prices, volumes, and market capitalization
+    - Corporate actions such as dividends, stock splits, and buybacks
+    - Relevant industry and sector benchmark metrics
+
+    If any required data is missing, inconsistent, or unavailable from a primary source,
+    identify alternative credible sources and reconcile differences using conservative assumptions.
+    Standardize all metrics (units, currency, fiscal year alignment) and validate consistency
+    across statements.
+
+    Return only the final structured dataset. Do not include reasoning steps, thoughts, or tool usage.
+  
+  expected_output: >
+    - Clean, structured financial dataset for {stock} and peers {peer_companies}
+    - Clear source attribution for each data block
+    - Explicit flags for missing, estimated, adjusted, or abnormal data points
+    - Short reconciliation notes where assumptions or adjustments were required
+
+  agent: DataEngineer
+
+
+fundamental_performance_and_peer_comparison_analysis:
+  description: >
+    Perform a comprehensive fundamental analysis of {stock} using the collected financial data
+    and compare its performance against peers {peer_companies} and relevant industry benchmarks.
+
+    Analyze:
+    - Revenue growth (YoY, CAGR) and growth quality
+    - Profitability margins (EBITDA, EBIT, Net margins)
+    - Return ratios and capital efficiency (ROE, ROCE, ROIC)
+    - Cost structure and operating leverage
+    - Financial sustainability and balance sheet strength
+
+    Identify the key drivers behind performance changes and clearly distinguish between
+    structural strengths, cyclical effects, and one-time or non-recurring factors.
+
+    Translate numerical results into clear business and investment insights explaining
+    relative outperformance or underperformance versus peers.
+  
+  expected_output: >
+    - Detailed financial performance analysis with peer comparisons
+    - Tables summarizing key metrics and multi-year trends
+    - Clear articulation of financial strengths, weaknesses, and sustainability outlook
+
+  agent: FinancialAnalysisAgent
+
+
+multi_dimensional_risk_identification_and_assessment:
+  description: >
+    Conduct an in-depth risk assessment for {stock} by evaluating and comparing financial,
+    operational, market, sectoral, and macroeconomic risks relative to peers {peer_companies}.
+
+    Assess risks related to:
+    - Leverage and liquidity
+    - Earnings and margin volatility
+    - Exposure to economic cycles and demand slowdown
+    - Competitive intensity and execution risk
+    - Regulatory, geopolitical, and currency risks
+
+    Where feasible, quantify risks using appropriate metrics and explain how each risk
+    could impact earnings, cash flows, valuation, and long-term investor returns.
+    Focus strictly on material and realistic risks; avoid generic or boilerplate statements.
+  
+  expected_output: >
+    - Categorized risk profile (High / Medium / Low)
+    - Quantitative and qualitative risk indicators
+    - Scenario-based downside and stress analysis with impact explanations
+
+  agent: RiskAnalysisAgent
+
+
+equity_valuation_and_mispricing_assessment:
+  description: >
+    Perform a detailed valuation analysis of {stock} to determine whether it is undervalued,
+    fairly valued, or overvalued relative to peers {peer_companies} and historical benchmarks.
+
+    Apply multiple valuation approaches, including:
+    - Relative valuation using peer multiples
+    - Historical valuation comparison
+    - Sector and industry benchmarking
+
+    Assess valuation sensitivity to key assumptions such as growth, margins, and market
+    expectations. Clearly explain the rationale behind the valuation outcome and outline
+    potential investor actions under different valuation scenarios.
+  
+  expected_output: >
+    - Clear valuation conclusion with supporting evidence
+    - Peer and historical valuation comparison tables
+    - Implied upside or downside with transparent assumptions
+
+  agent: ValuationAnalysisAgent
+
+
+integrated_equity_research_report_generation:
+  description: >
+    Synthesize insights from financial performance analysis, risk assessment,
+    and valuation analysis to produce a comprehensive 2000–2500 word equity
+    research report on {stock}.
+
+    The report should present a coherent, objective investment narrative supported
+    by numerical evidence, peer comparisons, and risk-adjusted reasoning.
+    Ensure logical flow across sections and professional institutional tone throughout.
+
+    The final output must be suitable for professional investors and decision-makers.
+  
+  expected_output: >
+    - A structured, professional-grade equity research report
+    - Clear investment stance (Buy / Hold / Avoid or equivalent)
+    - Data-backed justification, stated assumptions, and confidence level
+
+  agent: ManagerAgent

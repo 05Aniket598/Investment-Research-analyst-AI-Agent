@@ -20,7 +20,7 @@ crewai install
 ```
 ### Customizing
 
-**Add your `OPENAI_API_KEY` into the `.env` file**
+**Add your `GEMINI_API_KEY` into the `.env` file**
 
 - Modify `src/investment_research_analyst/config/agents.yaml` to define your agents
 - Modify `src/investment_research_analyst/config/tasks.yaml` to define your tasks

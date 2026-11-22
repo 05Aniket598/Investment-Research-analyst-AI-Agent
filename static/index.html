@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini Screener</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --line: #e3e6ea; --text: #1c2430; --muted: #667085;
+    --accent: #0b6e4f; --accent-soft: #e6f4ee; --red: #c0392b; --green: #1e8449; --warn: #fff6e0; --warn-line: #f0c36d;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0f1318; --card:#171c23; --line:#2a313b; --text:#e6e9ee; --muted:#9aa4b2; --accent:#3ecf9a; --accent-soft:#12302a; --red:#ff7b6b; --green:#4cd48a; --warn:#2b2412; --warn-line:#6b5a22; }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.55; }
+  a { color: var(--accent); text-decoration: none; cursor: pointer; }
+  a:hover { text-decoration: underline; }
+  header { background: var(--card); border-bottom: 1px solid var(--line); padding: 14px 20px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; color: var(--accent); }
+  nav { display: flex; gap: 6px; flex-wrap: wrap; }
+  nav a { padding: 6px 12px; border-radius: 6px; color: var(--muted); }
+  nav a.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; text-decoration: none; }
+  main { max-width: 1320px; margin: 0 auto; padding: 20px 16px 90px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  h2 { font-size: 17px; margin-bottom: 10px; }
+  h3 { font-size: 14px; margin-bottom: 8px; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; }
+  th, td { padding: 8px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .pos { color: var(--green); } .neg { color: var(--red); }
+  .range { position: relative; width: 110px; height: 6px; background: var(--line); border-radius: 3px; display: inline-block; vertical-align: middle; }
+  .range i { position: absolute; top: -3px; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .kpi b { display: block; font-size: 20px; margin-top: 2px; }
+  .warn { background: var(--warn); border: 1px solid var(--warn-line); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 14px; }
+  select, button, input { font: inherit; }
+  select, input { padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--text); }
+  button { padding: 7px 14px; border: 0; border-radius: 6px; background: var(--accent); color: #fff; cursor: pointer; }
+  button.ghost { background: var(--accent-soft); color: var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  details { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; background: var(--card); }
+  summary { cursor: pointer; font-weight: 600; }
+  .md table { min-width: 0; margin: 8px 0; } .md th, .md td { text-align: left; white-space: normal; }
+  .md p { margin: 6px 0; } .md ul, .md ol { margin: 6px 0 6px 20px; } .md h3, .md h4 { margin: 10px 0 4px; }
+  canvas { max-height: 280px; }
+  /* chat */
+  #chat-btn { position: fixed; right: 18px; bottom: 18px; border-radius: 26px; padding: 12px 18px; box-shadow: 0 4px 14px rgba(0,0,0,.25); z-index: 20; }
+  #chat { position: fixed; right: 18px; bottom: 74px; width: 370px; max-width: calc(100vw - 24px); height: 520px; max-height: calc(100vh - 100px);
+          background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,.3); display: none; flex-direction: column; z-index: 20; }
+  #chat.open { display: flex; }
+  #chat-head { padding: 10px 12px; border-bottom: 1px solid var(--line); font-weight: 600; display: flex; justify-content: space-between; }
+  #chat-log { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .msg { padding: 8px 10px; border-radius: 10px; max-width: 92%; font-size: 13px; }
+  .msg.me { background: var(--accent); color: #fff; align-self: flex-end; }
+  .msg.bot { background: var(--accent-soft); align-self: flex-start; }
+  .msg.bot p { margin: 4px 0; }
+  #chat-form { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--line); }
+  #chat-form input { flex: 1; }
+  @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Mini Screener</h1>
+  <nav id="nav">
+    <a href="#/" data-v="home">Screener</a>
+    <a href="#/compare" data-v="compare">Compare peers</a>
+    <a href="#/reports" data-v="reports">AI reports</a>
+  </nav>
+</header>
+
+<main id="view"></main>
+
+<button id="chat-btn">Ask the bot</button>
+<div id="chat">
+  <div id="chat-head"><span>Research bot</span><a id="chat-x">close</a></div>
+  <div id="chat-log"></div>
+  <form id="chat-form">
+    <input id="chat-in" placeholder="e.g. TCS sales growth FY25?" autocomplete="off" maxlength="400">
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const view = $('#view');
+let charts = [];
+const cache = {};
+
+const num = (v, d = 0) => (v === null || v === undefined) ? '–' : Number(v).toLocaleString('en-IN', { minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = v => (v === null || v === undefined) ? '–' : `<span class="${v >= 0 ? 'pos' : 'neg'}">${num(v, 1)}%</span>`;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const md = t => DOMPurify.sanitize(marked.parse(t || ''));
+
+async function api(path) {
+  if (cache[path]) return cache[path];
+  const r = await fetch(path);
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || `Error ${r.status}`);
+  const j = await r.json();
+  if (!path.startsWith('/api/reports')) cache[path] = j;
+  return j;
+}
+
+function killCharts() { charts.forEach(c => c.destroy()); charts = []; }
+function setNav(v) { document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('on', a.dataset.v === v)); }
+function note() {
+  return '<p class="muted" style="margin-top:14px">Financial numbers come from the Excel data file. Price and 52-week range come from Yahoo Finance (unofficial, may be delayed or missing). ROE and ROCE are calculated from year-end values, so they may differ from other websites. Demo for learning. Not investment advice.</p>';
+}
+
+/* ---------------- Screener ---------------- */
+async function home() {
+  setNav('home');
+  view.innerHTML = '<div class="card">Loading…</div>';
+  const { companies } = await api('/api/screener');
+  const rows = companies.map(c => {
+    const L = c.latest || {}, V = c.valuation || {}, P = c.price || {};
+    const range = (P.range_pos_pct !== undefined)
+      ? `<span class="muted">${num(P.low52)}</span> <span class="range"><i style="left:calc(${P.range_pos_pct}% - 1px)"></i></span> <span class="muted">${num(P.high52)}</span>`
+      : '–';
+    return `<tr>
+      <td><a href="#/company/${c.code}"><b>${c.code}</b></a><br><span class="muted">${esc(c.name)}</span></td>
+      <td>${num(P.price, 2)}</td><td>${range}</td><td>${P.from_high_pct !== undefined ? pct(P.from_high_pct) : '–'}</td>
+      <td>${num(V.pe_ttm, 1)}</td><td>${num(L.sales)}</td><td>${pct(L.sales_growth_pct)}</td>
+      <td>${num(L.ebitda_margin_pct, 1)}%</td><td>${num(L.roce_pct, 1)}%</td><td>${num(L.net_profit)}</td></tr>`;
+  }).join('');
+  view.innerHTML = `
+    <div class="card">
+      <h2>Companies</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Company</th><th>Price (₹)</th><th>52-week range</th><th>From 52W high</th><th>P/E (TTM)</th>
+        <th>Sales FY26 (₹ cr)</th><th>Sales growth</th><th>EBITDA margin</th><th>ROCE</th><th>Net profit (₹ cr)</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      ${note()}
+    </div>`;
+}
+
+/* ---------------- Company page ---------------- */
+function lineChart(id, labels, sets) {
+  const c = new Chart($(id), { type: 'line', data: { labels, datasets: sets.map(s => ({ ...s, tension: .25 })) },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } } });
+  charts.push(c);
+}
+function barChart(id, labels, sets) {
+  const c = new Chart($(id), { type: 'bar', data: { labels, datasets: sets },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } } });
+  charts.push(c);
+}
+
+async function companyPage(code) {
+  setNav('home');
+  view.innerHTML = '<div class="card">Loading…</div>';
+  const c = await api(`/api/company/${code}`);
+  const A = c.annual || [], L = A[A.length - 1] || {}, P = c.price || {}, V = c.valuation || {};
+  const fy = A.map(r => 'FY' + String(r.fiscal_year).slice(-2));
+  const col = k => A.map(r => r[k]);
+  view.innerHTML = `
+    <p><a href="#/">← All companies</a></p>
+    <h2 style="margin:8px 0">${esc(c.name)} <span class="muted">(${c.code} · ${esc(c.sector)})</span></h2>
+    <div class="kpis">
+      <div class="kpi"><span class="muted">Price</span><b>₹${num(P.price, 2)}</b><span class="muted">${esc(P.source || '')}</span></div>
+      <div class="kpi"><span class="muted">52-week low / high</span><b>${num(P.low52)} / ${num(P.high52)}</b></div>
+      <div class="kpi"><span class="muted">P/E (TTM)</span><b>${num(V.pe_ttm, 1)}</b></div>
+      <div class="kpi"><span class="muted">ROCE FY26</span><b>${num(L.roce_pct, 1)}%</b></div>
+      <div class="kpi"><span class="muted">EBITDA margin FY26</span><b>${num(L.ebitda_margin_pct, 1)}%</b></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h3>Sales and net profit (₹ crore)</h3><canvas id="c1"></canvas></div>
+      <div class="card"><h3>Margins and ROCE (%)</h3><canvas id="c2"></canvas></div>
+    </div>
+    <div class="card"><h3>Annual numbers (₹ crore unless stated)</h3><div class="table-wrap"><table>
+      <thead><tr><th>Year</th><th>Sales</th><th>Growth</th><th>EBITDA</th><th>EBITDA %</th><th>Net profit</th><th>EPS (₹)</th><th>ROE %</th><th>ROCE %</th><th>Debt/Equity</th></tr></thead>
+      <tbody>${A.map((r, i) => `<tr><td>${fy[i]}</td><td>${num(r.sales)}</td><td>${pct(r.sales_growth_pct)}</td><td>${num(r.ebitda)}</td>
+        <td>${num(r.ebitda_margin_pct, 1)}</td><td>${num(r.net_profit)}</td><td>${num(r.eps, 2)}</td>
+        <td>${num(r.roe_pct_year_end_equity, 1)}</td><td>${num(r.roce_pct, 1)}</td><td>${num(r.debt_to_equity, 2)}</td></tr>`).join('')}</tbody></table></div></div>
+    <div class="card"><h3>Last 8 quarters (₹ crore)</h3><div class="table-wrap"><table>
+      <thead><tr><th>Quarter</th><th>Sales</th><th>Operating profit</th><th>Net profit</th></tr></thead>
+      <tbody>${(c.quarterly || []).map(q => `<tr><td>${esc(q.period || q.period_end)}</td><td>${num(q.sales)}</td><td>${num(q.operating_profit)}</td><td>${num(q.net_profit)}</td></tr>`).join('')}</tbody></table></div></div>
+    ${note()}`;
+  killCharts();
+  barChart('#c1', fy, [{ label: 'Sales', data: col('sales') }, { label: 'Net profit', data: col('net_profit') }]);
+  lineChart('#c2', fy, [{ label: 'EBITDA margin %', data: col('ebitda_margin_pct') }, { label: 'ROCE %', data: col('roce_pct') }, { label: 'Net margin %', data: col('net_margin_pct') }]);
+}
+
+/* ---------------- Compare ---------------- */
+async function comparePage(a = 'TCS', b = 'INFY') {
+  setNav('compare');
+  const codes = ['TCS', 'INFY', 'HUL', 'ITC'];
+  const opt = s => codes.map(c => `<option ${c === s ? 'selected' : ''}>${c}</option>`).join('');
+  view.innerHTML = `<div class="card"><h2>Compare two companies</h2>
+    <div class="row"><select id="ca">${opt(a)}</select> vs <select id="cb">${opt(b)}</select><button id="go">Compare</button></div>
+    <div id="cmp">Loading…</div></div>`;
+  const run = async () => {
+    const x = $('#ca').value, y = $('#cb').value;
+    if (x === y) { $('#cmp').innerHTML = 'Please pick two different companies.'; return; }
+    const [A, B] = await Promise.all([api(`/api/company/${x}`), api(`/api/company/${y}`)]);
+    const la = A.annual[A.annual.length - 1] || {}, lb = B.annual[B.annual.length - 1] || {};
+    const M = [['Price (₹)', A.price?.price, B.price?.price, 2], ['P/E (TTM)', A.valuation?.pe_ttm, B.valuation?.pe_ttm, 1],
+      ['Sales FY26 (₹ cr)', la.sales, lb.sales, 0], ['Sales growth FY26 %', la.sales_growth_pct, lb.sales_growth_pct, 1],
+      ['EBITDA margin FY26 %', la.ebitda_margin_pct, lb.ebitda_margin_pct, 1], ['Net margin FY26 %', la.net_margin_pct, lb.net_margin_pct, 1],
+      ['ROE FY26 %', la.roe_pct_year_end_equity, lb.roe_pct_year_end_equity, 1], ['ROCE FY26 %', la.roce_pct, lb.roce_pct, 1],
+      ['Debt / Equity', la.debt_to_equity, lb.debt_to_equity, 2]];
+    $('#cmp').innerHTML = `<div class="table-wrap"><table><thead><tr><th>Metric</th><th>${x}</th><th>${y}</th></tr></thead><tbody>
+      ${M.map(m => `<tr><td>${m[0]}</td><td>${num(m[1], m[3])}</td><td>${num(m[2], m[3])}</td></tr>`).join('')}</tbody></table></div>
+      <p style="margin-top:12px" id="rlink"></p>${note()}`;
+    const { reports } = await api('/api/reports');
+    const hit = reports.find(r => r.id.toUpperCase().includes(x) && r.id.toUpperCase().includes(y));
+    $('#rlink').innerHTML = hit ? `An AI peer report is available: <a href="#/report/${hit.id}">${esc(hit.title)}</a>`
+      : '<span class="muted">No saved AI report for this pair yet.</span>';
+  };
+  $('#go').onclick = run; run();
+}
+
+/* ---------------- Reports ---------------- */
+async function reportsPage() {
+  setNav('reports');
+  const { reports } = await api('/api/reports');
+  view.innerHTML = `<div class="card"><h2>AI peer reports</h2>
+    <div class="warn">These reports are written by AI agents. They can make mistakes. Please cross-check before you use them.</div>
+    ${reports.length ? reports.map(r => `<p><a href="#/report/${r.id}">${esc(r.title)}</a></p>`).join('') : '<p class="muted">No reports saved yet.</p>'}</div>`;
+}
+
+async function reportPage(id) {
+  setNav('reports');
+  view.innerHTML = '<div class="card">Loading…</div>';
+  const r = await api(`/api/reports/${encodeURIComponent(id)}`);
+  const pick = r.sections.findIndex(s => /summary/i.test(s.title));
+  const main = r.sections[pick >= 0 ? pick : 0];
+  const rest = r.sections.filter(s => s !== main);
+  view.innerHTML = `
+    <p><a href="#/reports">← All reports</a></p>
+    <h2 style="margin:8px 0">${esc(r.title)}</h2>
+    <div class="warn"><b>Please cross-check.</b> ${esc(r.disclaimer)}</div>
+    <div class="card md"><h3>${esc(main.title)}</h3>${md(main.body)}</div>
+    ${rest.map(s => `<details><summary>${esc(s.title)}</summary><div class="md">${md(s.body)}</div></details>`).join('')}
+    <div class="row" style="margin-top:12px"><a href="/api/reports/${encodeURIComponent(id)}/download"><button class="ghost">Download full report (.md)</button></a>
+    <span class="muted">${num(r.words)} words</span></div>
+    <div class="warn" style="margin-top:12px">The crew can make mistakes. Please cross-check numbers with the annual reports.</div>`;
+}
+
+/* ---------------- Router ---------------- */
+async function route() {
+  killCharts();
+  const h = location.hash.replace(/^#\/?/, '').split('/');
+  try {
+    if (h[0] === 'company' && h[1]) await companyPage(h[1]);
+    else if (h[0] === 'compare') await comparePage();
+    else if (h[0] === 'reports') await reportsPage();
+    else if (h[0] === 'report' && h[1]) await reportPage(h[1]);
+    else await home();
+  } catch (e) {
+    view.innerHTML = `<div class="card"><b>Something went wrong.</b><p class="muted">${esc(e.message)}</p></div>`;
+  }
+  window.scrollTo(0, 0);
+}
+addEventListener('hashchange', route);
+route();
+
+/* ---------------- Chat widget ---------------- */
+const chat = $('#chat'), log = $('#chat-log'), form = $('#chat-form'), inp = $('#chat-in');
+function bubble(cls, html) { const d = document.createElement('div'); d.className = 'msg ' + cls; d.innerHTML = html; log.appendChild(d); log.scrollTop = log.scrollHeight; return d; }
+$('#chat-btn').onclick = () => { chat.classList.toggle('open'); if (!log.children.length) bubble('bot', 'Hi. Ask me about TCS, Infosys, HUL or ITC. I answer from the financial database and the annual reports. I can make mistakes, so please cross-check.'); inp.focus(); };
+$('#chat-x').onclick = () => chat.classList.remove('open');
+form.onsubmit = async e => {
+  e.preventDefault();
+  const q = inp.value.trim(); if (!q) return;
+  inp.value = ''; bubble('me', esc(q));
+  const wait = bubble('bot', 'Thinking…');
+  try {
+    const r = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: q }) });
+    if (r.status === 404) { wait.innerHTML = 'The chat backend is not connected yet (next build step).'; return; }
+    const j = await r.json();
+    if (!r.ok) { wait.textContent = j.detail || 'Error'; return; }
+    wait.innerHTML = md(j.answer) + (j.sources && j.sources.length ? `<p class="muted">Sources: ${j.sources.map(esc).join('; ')}</p>` : '');
+  } catch (err) { wait.textContent = 'Network error. Please try again.'; }
+  log.scrollTop = log.scrollHeight;
+};
+</script>
+</body>
+</html>

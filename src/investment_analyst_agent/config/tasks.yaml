@@ -1,0 +1,141 @@
+fundamental_performance_and_peer_comparison_analysis:
+  description: >
+    Analyse the fundamentals of {stock} and compare it with peers {peer_companies}.
+    All data was already collected by Python. Use ONLY the data below.
+    Do not call any tool. Do not calculate: use the numbers in section D and the tables.
+
+    === FINANCIAL DATA (database) ===
+    {financial_data}
+
+    === ANNUAL REPORT PASSAGES (growth, margins, costs, outlook) ===
+    {commentary_performance}
+
+    === DATA NOTES ===
+    {data_notes}
+
+    Cover these points:
+    - Revenue growth (YoY and the CAGR from section D) and growth quality.
+    - Profitability: EBITDA, EBIT and net margins, and how they changed.
+    - Return ratios (ROE, ROCE). ROE uses year-end equity.
+    - Cost structure and operating leverage (section C), balance sheet strength, cash conversion.
+    - Last 8 quarters (section E): is the trend improving or slowing?
+    - Why did growth, margins, costs or other income change? Explain ONLY with the annual
+      report passages and cite each as (Company FYxx, p. N). If no passage explains a
+      change, write "reason not found in the annual report". Never guess a reason.
+    - Separate structural strengths from cyclical effects and one-time items.
+    - Explain why {stock} out- or under-performed the peers.
+    - Quote numbers exactly as in the tables. Do not retype from memory.
+    - Numbers from the database are cited as (database), never with a page number.
+    - A cause for any change is allowed ONLY if a passage supports it, cited (Company FYxx, p. N). Do not write "wage inflation", "talent retention" or "equity reserves expanded" unless a passage says so.
+    - Averages are 5-year averages (FY22 to FY26). Say "5-year average".
+    - Say which net profit and EPS you use (reported or excluding exceptional items). If a net margin fell, check section E2 before calling it a weakness.
+    - Quarterly margin is operating_profit / sales. Never call it EBIT margin.
+    Rules: write "not available" for any missing value. Never invent ROIC, buybacks, trading
+    volume or any other metric that is not in the data. Keep money in INR crore.
+    Length: 700 to 900 words. Keep tables short (at most 8 rows, short cells).
+
+  expected_output: >
+    - Peer-comparison analysis in short prose plus 1 or 2 small tables
+    - Strengths, weaknesses and sustainability view
+    - Every annual-report statement cited as (Company FYxx, p. N)
+    - A short list of facts the later analysts must reuse (key numbers with FY labels)
+  agent: FinancialAnalysisAgent
+
+multi_dimensional_risk_identification_and_assessment:
+  description: >
+    Assess the material risks of {stock} compared with peers {peer_companies}.
+    All data was already collected by Python. Use ONLY the data below and the
+    fundamental analysis you receive as context. Do not call any tool.
+    Do not calculate: use the numbers already given.
+
+    === FINANCIAL DATA (database) ===
+    {financial_data}
+
+    === ANNUAL REPORT PASSAGES (risks) ===
+    {commentary_risk}
+
+    === DATA NOTES ===
+    {data_notes}
+
+    Assess:
+    - Leverage and liquidity (debt_to_equity, cash_bank, cash_from_operating_activity)
+    - Earnings and margin volatility (margin changes across years, last 8 quarters)
+    - Demand slowdown, competition and execution risk
+    - Regulatory, geopolitical and currency risk
+    Rate each risk High, Medium or Low and give the evidence: a database number with its
+    FY label, or an annual-report passage cited as (Company FYxx, p. N).
+    Add a downside scenario using ONLY section J of the valuation data (the sensitivity table) or numbers already given. A downside must be WORSE than today. Do not use today's numbers as a stress case.
+    Format: at most 6 risks, short bullets or a table with short cells.
+    Length: 500 to 700 words.
+  expected_output: >
+    - Risk list with High / Medium / Low rating and evidence for each
+    - One short downside scenario, clearly labelled as an illustration
+    - Annual-report sources as (Company FYxx, p. N)
+  agent: RiskAnalysisAgent
+
+equity_valuation_and_mispricing_assessment:
+  description: >
+    Judge whether {stock} looks undervalued, fairly valued or overvalued compared with
+    peers {peer_companies} and its own history.
+    All data was already collected by Python. Use ONLY the data below and the earlier
+    analyses you receive as context. Do not call any tool. Do not calculate multiples
+    yourself: use the tables.
+
+    === VALUATION DATA (database) ===
+    {valuation_data}
+
+    === DATA NOTES ===
+    {data_notes}
+
+    Do this:
+    - Compare current multiples (section F) with the historical range (section G) and
+      with the peers.
+    - State clearly that the current price comes from the Excel data file (date not stated
+      in the file) and give the TTM period shown in the table.
+    - Link the valuation to the quality findings (growth, margins, returns, risks) from the
+      earlier analyses.
+    - Use the scenario table (section I) for Low, Base and High prices. Copy them exactly. Show both EPS bases.
+    - The Low case is the lowest P/E in only 5 yearly values. It is NOT a floor. Never write "capped" or "limited downside".
+    - Use the sensitivity table (section J) for the downside.
+    - Give only Hold or "Valuation inconclusive". Maximum confidence is Medium. Say why.
+    - Write ONE valuation verdict. Do not say both "undervalued" and "fairly valued".
+    - Sensitivity: what changes the answer (growth, margins, market expectations).
+    - Do not quote sector averages (not available). Do not invent prices, market caps or
+      returns. Do not give Buy, Hold or Avoid on incomplete data.
+    - Keep business quality and investment attractiveness as two separate sections.
+    Length: 500 to 700 words.
+  expected_output: >
+    - Valuation conclusion with the numbers used
+    - Peer and historical comparison table (at most 8 rows)
+    - Low, base and high case with reasons, only if data is sufficient
+    - Separate view of business quality and investment attractiveness
+  agent: ValuationAnalysisAgent
+
+integrated_equity_research_report_generation:
+  description: >
+    Write the final equity research report on {stock}. Length: 2000 to 2500 words.
+    The report date is {report_date}. Do not invent any other date.
+    Combine the three analyses you receive as context (fundamentals, risks, valuation)
+    into one connected, professional report for investors.
+
+    Data notes to use in the Limitations section:
+    {data_notes}
+
+    Rules:
+    - Write each section ONCE in fresh, connected prose. Do not copy earlier text.
+    - Use only numbers and facts given in the earlier analyses. Add no new numbers or facts.
+    - Cite every annual-report statement as (Company FYxx, p. N).
+    - Keep tables short (at most 8 rows, short cells).
+    - No placeholders such as [Your Name] or [Firm Name].
+    - Stance: only "Hold" or "Valuation inconclusive". Confidence: Low or Medium, with the reason.
+    - Numbers from the database are cited as (database), not with a page number.
+    - In Limitations, state: reported vs excluding-exceptional-items profit and EPS (section E2), only 5 yearly P/E values, and any other data note.
+    - Give a confidence level (Low / Medium / High) with the reason.
+    - Structure: Summary, Business and financial performance, Peer comparison, Risks,
+      Valuation, Investment view, Limitations (data sources, price date, missing metrics),
+      Sources (database and annual-report pages used).
+  expected_output: >
+    - A structured, professional equity research report of 2000 to 2500 words
+    - Investment stance or "Valuation inconclusive", with confidence level and reason
+    - Limitations and Sources sections
+  agent: ManagerAgent

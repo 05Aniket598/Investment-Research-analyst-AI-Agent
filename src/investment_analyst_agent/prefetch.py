@@ -85,7 +85,7 @@ def _diff(a, b):
 
 def _quarter_fy(period):
     """'Jun-26' -> 'FY27 Q1', 'Mar-26' -> 'FY26 Q4'"""
-    d = datetime.strptime(period, "%b-%y")
+    d = datetime.datetime.strptime(period, "%b-%y")
     fy = d.year + 1 if d.month >= 4 else d.year
     q = ((d.month - 4) % 12) // 3 + 1
     return f"FY{str(fy)[-2:]} Q{q}"

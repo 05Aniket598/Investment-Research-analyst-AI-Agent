@@ -1,7 +1,7 @@
 """
-app.py - Mini screener backend, phase 1 (data + saved reports, NO LLM yet).
+app.py - Mini screener backend: screener data, saved reports and the chat route.
 
-Put this file in the project ROOT (next to ingest.py).
+Put this file in the project ROOT (next to ingest.py and chat_engine.py).
 Run from the project root:
     uv run uvicorn app:app --reload
 Then open http://127.0.0.1:8000
@@ -11,14 +11,21 @@ import re
 import sqlite3
 import threading
 import time
+import os
+import uuid
+from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
+
+import chat_engine
 
 ROOT = Path(__file__).resolve().parent
+os.chdir(ROOT)          # the crew writes report.md in the current folder
 DB = ROOT / "knowledge" / "financials.db"
 REPORT_DIR = ROOT / "knowledge" / "reports"
 STATIC_DIR = ROOT / "static"
@@ -250,6 +257,119 @@ def report_download(rid: str):
     path = _report_path(rid)
     return FileResponse(path, media_type="text/markdown", filename=f"{rid}.md")
 
+
+# ----------------------------------------------------------------- API: chat
+chat_engine.PRICE_FN = get_price          # lets the bot answer price questions with the same cached yfinance data
+
+
+class ChatIn(BaseModel):
+    message: str = Field(..., min_length=1, max_length=300)
+
+
+def _visitor(request: Request):
+    """Visitor id for the per-visitor cap. Behind a host proxy the real address is in x-forwarded-for.
+    (A determined person can fake this header: fine for a demo, not for real security.)"""
+    fwd = request.headers.get("x-forwarded-for", "")
+    if fwd:
+        return fwd.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+@app.post("/api/chat")
+def chat(body: ChatIn, request: Request):
+    return chat_engine.answer(body.message, _visitor(request))
+
+
+@app.get("/api/chat/status")
+def chat_status():
+    return chat_engine.status()
+
+
+# load the embedding model in the background so the first AI question is not slow
+threading.Thread(target=chat_engine.warm_up, daemon=True).start()
+
+# ----------------------------------------------------------------- API: make a detailed report on demand
+REPORT_DAILY_CAP = int(os.getenv("REPORT_DAILY_CAP", "3"))      # reports per day for the whole site
+REPORT_VISITOR_CAP = int(os.getenv("REPORT_VISITOR_CAP", "1"))  # reports per day for one visitor
+_jobs = {}
+_rep = {"day": None, "total": 0, "ip": {}, "current": None}
+_rep_lock = threading.Lock()
+
+
+class ReportIn(BaseModel):
+    a: str
+    b: str
+
+
+def _pair_report(a, b):
+    for p in _report_files():
+        if {a, b} <= set(re.split(r"[^A-Z0-9]+", p.stem.upper())):
+            return p.stem
+    return None
+
+
+def _is_limit(msg):
+    m = msg.lower()
+    return any(k in m for k in ("429", "resource_exhausted", "quota", "rate limit", "rate_limit"))
+
+
+def _run_job(job_id, a, b):
+    job = _jobs[job_id]
+    failed, quota = False, False
+    try:
+        import make_reports
+        job.update(status="done", report=make_reports.generate(a, b).stem)
+    except Exception as e:
+        print("report job failed:", repr(e))           # read this line in the terminal to see the real reason
+        failed = True
+        quota = _is_limit(str(e))
+        job.update(status="error", message=("Today's limit is reached. Please try again tomorrow." if quota
+                   else "The report could not be made right now. Please try again later."))
+    finally:
+        with _rep_lock:
+            _rep["current"] = None
+            if failed:                                  # the visitor got no report, so give the try back
+                _rep["ip"][job["ip"]] = max(0, _rep["ip"].get(job["ip"], 1) - 1)
+                # quota error: block everyone for today. Other error: give the site try back too
+                _rep["total"] = REPORT_DAILY_CAP if quota else max(0, _rep["total"] - 1)
+
+
+@app.post("/api/reports/generate")
+def report_generate(body: ReportIn, request: Request):
+    a, b = body.a.strip().upper(), body.b.strip().upper()
+    if a == b or a not in COMPANIES or b not in COMPANIES:
+        raise HTTPException(400, "Pick two different companies: " + ", ".join(COMPANIES))
+    done = _pair_report(a, b)
+    if done:                                            # already saved: free, instant
+        return {"status": "done", "report": done}
+    ip = _visitor(request)
+    with _rep_lock:
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        if _rep["day"] != today:
+            _rep.update(day=today, total=0, ip={})
+        cur = _rep["current"]
+        if cur and time.time() - _jobs[cur]["started"] < 1200:        # one report at a time
+            if _jobs[cur]["pair"] == {a, b}:
+                return {"status": "running", "job": cur}
+            return {"status": "busy", "message": "Another report is being written now. Please try again in a few minutes."}
+        if _rep["total"] >= REPORT_DAILY_CAP:
+            return {"status": "limit", "message": "Today's report limit is reached. Please try again tomorrow."}
+        if _rep["ip"].get(ip, 0) >= REPORT_VISITOR_CAP:
+            return {"status": "limit", "message": "You already asked for a report today. Please try again tomorrow."}
+        job_id = uuid.uuid4().hex[:10]
+        _jobs[job_id] = {"status": "running", "pair": {a, b}, "started": time.time(), "ip": ip}
+        _rep.update(current=job_id, total=_rep["total"] + 1)
+        _rep["ip"][ip] = _rep["ip"].get(ip, 0) + 1
+    threading.Thread(target=_run_job, args=(job_id, a, b), daemon=True).start()
+    return {"status": "running", "job": job_id}
+
+
+@app.get("/api/reports/jobs/{job_id}")
+def report_job(job_id: str):
+    job = _jobs.get(job_id)
+    if not job:
+        raise HTTPException(404, "Unknown job")
+    return {k: v for k, v in job.items() if k in ("status", "report", "message")}
 
 # ----------------------------------------------------------------- pages
 STATIC_DIR.mkdir(exist_ok=True)
